@@ -1,187 +1,461 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Magic Snap</title>
+
 <style>
+
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap');
+
 body {
-  font-family: sans-serif;
+
+  font-family: 'Baloo 2', cursive;
+
   margin: 0;
-  background: linear-gradient(135deg,#ffd6f5,#d9f7ff);
+
+  background: linear-gradient(135deg,#FFD6F5,#D9F7FF);
+
 }
+
 .app {
+
   max-width: 600px;
+
   margin: auto;
+
   padding: 16px;
+
 }
+
 .card {
-  background: white;
+
+  background: linear-gradient(145deg,#fff0f5,#e0f7ff);
+
   border-radius: 24px;
-  padding: 16px;
+
+  padding: 24px;
+
   margin-bottom: 16px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+
+  box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+
+  text-align: center;
+
+  transition: transform 0.2s;
+
 }
-.camera-wrap {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
+
+.card:hover {
+
+  transform: translateY(-5px);
+
 }
-video {
-  width: 100%;
-  display: block;
+
+h1, h2 {
+
+  color: #7b61ff;
+
 }
-#overlay {
-  position: absolute;
-  top: 50px;
-  left: 50px;
-  width: 200px;
-  cursor: move;
-  touch-action: none;
-}
-#history {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 8px 0;
-}
-#history img {
-  width: 100px;
-  border-radius: 12px;
-}
+
 button {
-  padding: 12px 18px;
+
+  padding: 14px 24px;
+
   border: none;
-  border-radius: 14px;
-  background: #7b61ff;
+
+  border-radius: 20px;
+
+  background: linear-gradient(45deg,#ff61ff,#7b61ff);
+
   color: white;
+
   font-size: 16px;
-  margin-top: 10px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  margin-top: 12px;
+
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+
+  transition: transform 0.1s;
+
 }
-input[type=range] {
+
+button:hover {
+
+  transform: scale(1.05);
+
+}
+
+input[type="file"] {
+
+  display: none;
+
+}
+
+#uploadLabel {
+
+  display: inline-block;
+
+  padding: 14px 24px;
+
+  background: linear-gradient(45deg,#ff61ff,#7b61ff);
+
+  color: white;
+
+  border-radius: 20px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+  box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+
+  transition: transform 0.1s;
+
+}
+
+#uploadLabel:hover {
+
+  transform: scale(1.05);
+
+}
+
+#overlay {
+
+  position: absolute;
+
+  top: 50px;
+
+  left: 50px;
+
+  width: 200px;
+
+  touch-action: none;
+
+}
+
+.camera-wrap {
+
+  position: relative;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  margin-top: 16px;
+
+}
+
+video {
+
   width: 100%;
+
+  display: block;
+
+  border-radius: 20px;
+
 }
+
+#history {
+
+  display: flex;
+
+  gap: 12px;
+
+  overflow-x: auto;
+
+  padding: 8px 0;
+
+}
+
+#history img {
+
+  width: 100px;
+
+  border-radius: 12px;
+
+}
+
+.cartoon {
+
+  width: 150px;
+
+  margin-bottom: 16px;
+
+}
+
 </style>
+
 </head>
+
 <body>
+
 <div class="app">
-  <header>
+
+  <!-- Upload Page -->
+
+  <div id="uploadPage" class="card">
+
     <h1>✨ Magic Snap</h1>
-    <p>Bring anyone or anything into your photos.</p>
-  </header>
 
-  <section class="card">
-    <h2>1. Upload Image</h2>
+    <img src="https://i.imgur.com/OJxvVho.png" alt="cute cartoon" class="cartoon">
+
+    <p>Bring your favorite characters or items into your photos!</p>
+
+    <label id="uploadLabel" for="upload">📁 Choose Image</label>
+
     <input type="file" id="upload" accept="image/*">
-    <button id="removeBgBtn">Remove Background (Demo)</button>
-  </section>
 
-  <section class="card">
-    <h2>2. Camera Studio</h2>
+    <button id="nextBtn">Next</button>
+
+  </div>
+
+  <!-- Camera Page (hidden initially) -->
+
+  <div id="cameraPage" class="card" style="display:none;">
+
+    <h2>Camera Studio</h2>
+
     <div class="camera-wrap">
+
       <video id="video" autoplay playsinline></video>
+
       <img id="overlay" />
+
     </div>
 
-    <label>Size</label>
-    <input type="range" id="size" min="50" max="500" value="200">
-
-    <label>Rotation</label>
-    <input type="range" id="rotation" min="-180" max="180" value="0">
-
     <button id="captureBtn">📸 Capture</button>
-  </section>
 
-  <section class="card">
     <h2>💖 Memory Shelf</h2>
+
     <div id="history"></div>
-  </section>
+
+  </div>
 
   <canvas id="canvas" style="display:none"></canvas>
+
 </div>
 
 <script>
-const video = document.getElementById('video');
+
+// Pages
+
+const uploadPage = document.getElementById('uploadPage');
+
+const cameraPage = document.getElementById('cameraPage');
+
+// Overlay
+
 const overlay = document.getElementById('overlay');
 
-navigator.mediaDevices.getUserMedia({video:true})
+let uploadedFile = null;
+
+// Load previous history
+
+const historyDiv = document.getElementById('history');
+
+let saved = JSON.parse(localStorage.getItem('magic_snap_history')||'[]');
+
+saved.forEach(src => {
+
+  const thumb = document.createElement('img');
+
+  thumb.src = src;
+
+  historyDiv.appendChild(thumb);
+
+});
+
+// File upload
+
+const uploadInput = document.getElementById('upload');
+
+uploadInput.addEventListener('change', e => {
+
+  const file = e.target.files[0];
+
+  if(!file) return;
+
+  uploadedFile = file;
+
+  overlay.src = URL.createObjectURL(file);
+
+});
+
+// Next button to switch to camera
+
+document.getElementById('nextBtn').onclick = () => {
+
+  if(!uploadedFile) {
+
+    alert("Please choose an image first!");
+
+    return;
+
+  }
+
+  uploadPage.style.display = 'none';
+
+  cameraPage.style.display = 'block';
+
+  startCamera();
+
+}
+
+// Camera
+
+const video = document.getElementById('video');
+
+function startCamera(){
+
+  navigator.mediaDevices.getUserMedia({video:true})
+
   .then(stream => video.srcObject = stream)
+
   .catch(err => console.error("Camera error:", err));
 
-document.getElementById('upload').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  overlay.src = URL.createObjectURL(file);
-});
+}
 
-document.getElementById('removeBgBtn').onclick = () => {
-  alert('Demo placeholder. Connect remove.bg API or U2Net model here.');
-};
+// Gesture handling for overlay (two fingers)
 
-document.getElementById('size').oninput = e => overlay.style.width = e.target.value + 'px';
-document.getElementById('rotation').oninput = e => overlay.style.transform = `rotate(${e.target.value}deg)`;
+let scale = 1, rotation = 0;
 
-let dragging = false, offsetX = 0, offsetY = 0;
+let lastDist = null;
+
+let lastAngle = null;
+
+let posX = 50, posY = 50;
+
+overlay.style.left = posX + 'px';
+
+overlay.style.top = posY + 'px';
 
 overlay.addEventListener('pointerdown', e => {
-  dragging = true;
-  offsetX = e.offsetX;
-  offsetY = e.offsetY;
+
+  e.preventDefault();
+
 });
 
-window.addEventListener('pointermove', e => {
-  if(!dragging) return;
-  const rect = video.getBoundingClientRect();
-  overlay.style.left = (e.clientX - rect.left - offsetX) + 'px';
-  overlay.style.top = (e.clientY - rect.top - offsetY) + 'px';
+overlay.addEventListener('touchmove', e => {
+
+  if(e.touches.length === 1){
+
+    posX = e.touches[0].clientX - overlay.width/2;
+
+    posY = e.touches[0].clientY - overlay.height/2;
+
+    overlay.style.left = posX + 'px';
+
+    overlay.style.top = posY + 'px';
+
+  } else if(e.touches.length === 2){
+
+    const dx = e.touches[1].clientX - e.touches[0].clientX;
+
+    const dy = e.touches[1].clientY - e.touches[0].clientY;
+
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+    if(lastDist){
+
+      scale *= dist/lastDist;
+
+      rotation += angle - lastAngle;
+
+      overlay.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
+
+    }
+
+    lastDist = dist;
+
+    lastAngle = angle;
+
+  }
+
+}, {passive:false});
+
+overlay.addEventListener('touchend', e => {
+
+  if(e.touches.length < 2){
+
+    lastDist = null;
+
+    lastAngle = null;
+
+  }
+
 });
 
-window.addEventListener('pointerup', () => dragging = false);
+// Capture button
 
 document.getElementById('captureBtn').onclick = () => {
+
   const canvas = document.getElementById('canvas');
+
   canvas.width = video.videoWidth;
+
   canvas.height = video.videoHeight;
+
   const ctx = canvas.getContext('2d');
 
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
 
   if(overlay.src){
+
     const img = new Image();
+
     img.onload = () => {
-      ctx.drawImage(img,
-        parseInt(overlay.style.left)||50,
-        parseInt(overlay.style.top)||50,
-        overlay.width,
-        overlay.height
-      );
+
+      ctx.save();
+
+      ctx.translate(posX + overlay.width/2, posY + overlay.height/2);
+
+      ctx.rotate(rotation * Math.PI/180);
+
+      ctx.scale(scale, scale);
+
+      ctx.drawImage(img, -overlay.width/2, -overlay.height/2, overlay.width, overlay.height);
+
+      ctx.restore();
 
       const result = canvas.toDataURL('image/png');
 
       const thumb = document.createElement('img');
-      thumb.src = result;
-      document.getElementById('history').prepend(thumb);
 
-      // Optionally store in localStorage for persistence
-      let saved = JSON.parse(localStorage.getItem('magic_snap_history')||'[]');
+      thumb.src = result;
+
+      historyDiv.prepend(thumb);
+
+      // Save to localStorage
+
       saved.unshift(result);
+
       if(saved.length>50) saved.pop();
+
       localStorage.setItem('magic_snap_history', JSON.stringify(saved));
-    };
+
+    }
+
     img.src = overlay.src;
+
   }
+
 };
 
-// Load previous history from localStorage
-window.addEventListener('load', () => {
-  let saved = JSON.parse(localStorage.getItem('magic_snap_history')||'[]');
-  const historyDiv = document.getElementById('history');
-  saved.forEach(src => {
-    const thumb = document.createElement('img');
-    thumb.src = src;
-    historyDiv.appendChild(thumb);
-  });
-});
 </script>
+
 </body>
+
 </html>
