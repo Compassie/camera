@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic Snap</title>
+<style>
+body {
+  font-family: sans-serif;
+  margin: 0;
+  background: linear-gradient(135deg,#ffd6f5,#d9f7ff);
+}
+.app {
+  max-width: 600px;
+  margin: auto;
+  padding: 16px;
+}
+.card {
+  background: white;
+  border-radius: 24px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+.camera-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+}
+video {
+  width: 100%;
+  display: block;
+}
+#overlay {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+  width: 200px;
+  cursor: move;
+  touch-action: none;
+}
+#history {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+#history img {
+  width: 100px;
+  border-radius: 12px;
+}
+button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 14px;
+  background: #7b61ff;
+  color: white;
+  font-size: 16px;
+  margin-top: 10px;
+}
+input[type=range] {
+  width: 100%;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>✨ Magic Snap</h1>
+    <p>Bring anyone or anything into your photos.</p>
+  </header>
+
+  <section class="card">
+    <h2>1. Upload Image</h2>
+    <input type="file" id="upload" accept="image/*">
+    <button id="removeBgBtn">Remove Background (Demo)</button>
+  </section>
+
+  <section class="card">
+    <h2>2. Camera Studio</h2>
+    <div class="camera-wrap">
+      <video id="video" autoplay playsinline></video>
+      <img id="overlay" />
+    </div>
+
+    <label>Size</label>
+    <input type="range" id="size" min="50" max="500" value="200">
+
+    <label>Rotation</label>
+    <input type="range" id="rotation" min="-180" max="180" value="0">
+
+    <button id="captureBtn">📸 Capture</button>
+  </section>
+
+  <section class="card">
+    <h2>💖 Memory Shelf</h2>
+    <div id="history"></div>
+  </section>
+
+  <canvas id="canvas" style="display:none"></canvas>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+
+navigator.mediaDevices.getUserMedia({video:true})
+  .then(stream => video.srcObject = stream)
+  .catch(err => console.error("Camera error:", err));
+
+document.getElementById('upload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  overlay.src = URL.createObjectURL(file);
+});
+
+document.getElementById('removeBgBtn').onclick = () => {
+  alert('Demo placeholder. Connect remove.bg API or U2Net model here.');
+};
+
+document.getElementById('size').oninput = e => overlay.style.width = e.target.value + 'px';
+document.getElementById('rotation').oninput = e => overlay.style.transform = `rotate(${e.target.value}deg)`;
+
+let dragging = false, offsetX = 0, offsetY = 0;
+
+overlay.addEventListener('pointerdown', e => {
+  dragging = true;
+  offsetX = e.offsetX;
+  offsetY = e.offsetY;
+});
+
+window.addEventListener('pointermove', e => {
+  if(!dragging) return;
+  const rect = video.getBoundingClientRect();
+  overlay.style.left = (e.clientX - rect.left - offsetX) + 'px';
+  overlay.style.top = (e.clientY - rect.top - offsetY) + 'px';
+});
+
+window.addEventListener('pointerup', () => dragging = false);
+
+document.getElementById('captureBtn').onclick = () => {
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+
+  ctx.drawImage(video, 0, 0);
+
+  if(overlay.src){
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img,
+        parseInt(overlay.style.left)||50,
+        parseInt(overlay.style.top)||50,
+        overlay.width,
+        overlay.height
+      );
+
+      const result = canvas.toDataURL('image/png');
+
+      const thumb = document.createElement('img');
+      thumb.src = result;
+      document.getElementById('history').prepend(thumb);
+
+      // Optionally store in localStorage for persistence
+      let saved = JSON.parse(localStorage.getItem('magic_snap_history')||'[]');
+      saved.unshift(result);
+      if(saved.length>50) saved.pop();
+      localStorage.setItem('magic_snap_history', JSON.stringify(saved));
+    };
+    img.src = overlay.src;
+  }
+};
+
+// Load previous history from localStorage
+window.addEventListener('load', () => {
+  let saved = JSON.parse(localStorage.getItem('magic_snap_history')||'[]');
+  const historyDiv = document.getElementById('history');
+  saved.forEach(src => {
+    const thumb = document.createElement('img');
+    thumb.src = src;
+    historyDiv.appendChild(thumb);
+  });
+});
+</script>
+</body>
+</html>
